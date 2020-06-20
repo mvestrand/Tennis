@@ -1,0 +1,11 @@
+# Ignore Rproject local data
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Ignore the decompressed dataset
+data/
+
+*.aux
+*.pdf
