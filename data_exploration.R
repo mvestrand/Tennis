@@ -50,18 +50,18 @@ na_matches %>%
   summarize(n=n()) %>%
   arrange(-n)
   
-# Unparsable scores
-score_regex <- regex(paste("^", strrep("(([0-9]+)-([0-9]+)(\\([0-9]+\\))?)?\\s*",5), "$", sep=""))
-unparsed_matches <- raw_matches %>%
-  mutate(surface=factor(surface),
-         round=factor(round)) %>%
-  filter(!surface %in% c('None', NA)
-         & !is.na(w_ace+w_df+w_svpt+w_1stIn+w_1stWon+w_2ndWon+w_SvGms+w_bpSaved+w_bpFaced
-                  +l_ace+l_df+l_svpt+l_1stIn+l_1stWon+l_2ndWon+l_SvGms+l_bpSaved+l_bpFaced)
-         & str_detect(score, "[0-9]")) %>%
-  mutate(retire = str_detect(score, regex("ret", ignore_case=TRUE))) %>%
-  mutate(score = trim(str_replace(score, regex("ret", ignore_case=TRUE), ""))) %>%
-  filter(!str_detect(score, score_regex))
+# # Unparsable scores
+# score_regex <- regex(paste("^", strrep("(([0-9]+)-([0-9]+)(\\([0-9]+\\))?)?\\s*",5), "$", sep=""))
+# unparsed_matches <- raw_matches %>%
+#   mutate(surface=factor(surface),
+#          round=factor(round)) %>%
+#   filter(!surface %in% c('None', NA)
+#          & !is.na(w_ace+w_df+w_svpt+w_1stIn+w_1stWon+w_2ndWon+w_SvGms+w_bpSaved+w_bpFaced
+#                   +l_ace+l_df+l_svpt+l_1stIn+l_1stWon+l_2ndWon+l_SvGms+l_bpSaved+l_bpFaced)
+#          & str_detect(score, "[0-9]")) %>%
+#   mutate(retire = str_detect(score, regex("ret", ignore_case=TRUE))) %>%
+#   mutate(score = trim(str_replace(score, regex("ret", ignore_case=TRUE), ""))) %>%
+#   filter(!str_detect(score, score_regex))
 
   
 # Tabulate player stats
@@ -85,7 +85,7 @@ player_win_counts <- function(match_data) {
 }
 
 
-player_stats <- get_player_win_counts(raw_matches)
+player_stats <- player_win_counts(raw_matches)
 
 # Players with n matches
 plot_n_matches <- player_stats %>% ggplot(aes(matches)) +
@@ -98,7 +98,7 @@ plot_win_percent <- player_stats %>%
   mutate(win_percent = 100*wins/matches) %>% 
   ggplot(aes(win_percent)) +
   geom_histogram(bins=30, color='black') +
-  ggtitle('Players by Win Percentage')
+  ggtitle('Players by Win%')
 
 # Players by Win-Loss Ratio
 lambda <- 0
@@ -140,7 +140,9 @@ plot_derived_features <- derived_stats %>% gather(key="stat", value="value", p_a
   ggplot(aes(value, fill=win))+
   geom_density(aes(y=..count..),alpha=0.2)+
   xlim(0,1) +
-  facet_wrap(~stat, scales="fixed")
+  facet_wrap(~stat, scales="fixed") +
+  ggtitle('Player Statistics in Won vs. Lost Games')
+
 
 # Fraction of games won with fewer points
 won_games <- derived_stats %>%
@@ -149,5 +151,11 @@ mean(won_games$p_ptWonRate < 0.5)
 
 # Handedness values
 atp_players %>%
+  group_by(hand) %>%
+  summarize(n=n())
+
+# Handedness values of observed players
+tibble(player_id = known_final_players) %>%
+  left_join(atp_players, "player_id") %>%
   group_by(hand) %>%
   summarize(n=n())

@@ -198,10 +198,11 @@ accuracies <- sapply(w_values, FUN=function(w){
 })
 best_w <- w_values[which.max(accuracies)]
 
+# Compute ratings on the entire training set
 ratings <- elo_rating_weighted_score(k, r_init, best_w, matches_final_train)
 pred <- elo_rating_weighted_score_predict(ratings, matches_final_test)
 
-#plot(w_values, accuracies)
+plot(w_values, accuracies)
 
 plot_w_accuracy <- tibble(w=w_values, accuracy=accuracies) %>%
   ggplot(aes(w, accuracy)) +
@@ -304,27 +305,15 @@ pred <- predict(fit, test_match_stats)
 
 res <- update_results_table(res, "GLM", pred, mean(pred==matches_final_test$win))
 
-#============
-# Knn model
-#============
-
-# # Takes too long to complete
-# fit <- train(win ~ ., method = "knn", data = match_stats)
-# pred <- predict(fit, test_match_stats)
-# 
-# res <- update_results_table(res, "knn", pred, mean(pred==matches_final_test$win))
-# 
-
-#============
-# QDA model
-#============
-
-fit <- train(win ~ ., method = "qda", data = match_stats)
-pred <- predict(fit, test_match_stats)
-
-res <- update_results_table(res, "QDA", pred, mean(pred==matches_final_test$win))
 
 
-#ratings <- elo_rating_weighted_score(k, r_init, best_w, matches_final_train)
-
+#==========================
+# Explore match stats
+#==========================
+plot_factors_vs_rating <- match_stats %>%
+  gather(key="stat", value="value", off1st:hand) %>%
+  ggplot(aes(x=value, y=ratingDiff, color=win)) +
+  geom_point(alpha=0.2) +
+  facet_wrap(~stat, scales="fixed") +
+  ggtitle('Match Factors vs. Rating Difference')
 

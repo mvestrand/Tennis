@@ -80,15 +80,17 @@ atp_players <- read_csv(file.path(datapath, "atp_players.csv"), col_types=cols(
 ))
 
 
-final_test_date = "2018-01-01"
-test_date = "2017-01-01"
+final_end_date = "2018-01-01"
+end_date = "2017-01-01"
+final_start_date = end_date
+start_date = "2016-01-01"
 
 # Split into training and test sets
 matches_final_train <- atp_matches %>%
-  filter(tourney_date < final_test_date)
+  filter(tourney_date < final_start_date)
 
 matches_train <- matches_final_train %>%
-  filter(tourney_date < test_date)
+  filter(tourney_date < start_date)
 
 # Get all players in test sets
 known_final_players <- matches_final_train %>%
@@ -104,13 +106,15 @@ known_players <- matches_train %>%
 matches_final_test <- atp_matches %>%
   filter(winner_id %in% known_final_players
          & loser_id %in% known_final_players) %>%
-  filter(tourney_date >= "2018-01-01")
+  filter(tourney_date >= final_start_date
+         & tourney_date < final_end_date)
 matches_final_test <- shuffle_matches(matches_final_test)
 
 matches_test <- matches_final_train %>%
   filter(winner_id %in% known_players
          & loser_id %in% known_players) %>%
-  filter(tourney_date >= "2017-01-01")
+  filter(tourney_date >= start_date
+         & tourney_date < end_date)
 matches_test <- shuffle_matches(matches_test)
 
 
