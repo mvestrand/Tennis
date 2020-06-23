@@ -5,6 +5,9 @@ output: pdf_document
 ---
 
 ```{r include=FALSE}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=80),tidy=TRUE)
+
 source("monolith.R")
 ```
 
@@ -16,12 +19,12 @@ source("monolith.R")
 	The base data required tidying before being usable for match prediction. Any matches that are walkovers are dropped, as they give no info about the players' ability. Any matches that are missing score statistics are dropped for consistency, as they are a relatively small part of the dataset (about 10%). Players that are missing handedness info are treated as right handed, as it is more common in the dataset.
 	The base data also needed to be reformatted to be used for match prediction, as the entries are encoded from the perspective of the winner. To prevent models from simply always guessing that the first player won, the columns are changed from "winner-loser" to "player-opponent" and the winner is stored in a new column. The players are then randomly flipped in approximately half of the matches. For convenience, a second data frame is also created which stores each match twice, once from each players perspective. In the code, match sets that are randomly flipped are referred to as "shuffled" and match sets that are given from both perspectives are referred to as "neutral." For simplicity, matches involving new players in the testing set are dropped.
 	Some insights can be gained from examining the base data given, such as the fact that there are a considerable number of players who have never won a game. This makes sense when considering that most of the data is in the form of single elimination tournaments. In the first round of a tournament, half of the players are eliminated after playing and losing only a single match, meaning most players have fewer matches. This also agrees with that fact that most players have only played a small number of matches.
-```{r echo=F, fig.align='center'}
+```{r echo=F, warning=F}
 plot_win_percent
 plot_n_matches
 ```
 	We can also examine some basic statistics and how they are related to winning matches. Looking at the plot, we can see that statistics like the amount that a player double faults and the amount of 1st serves that are in bounds have little bearing on the outcome of the match. Statistics like the percent of 1st serves won and 2nd serves won are somewhat related to the outcome of the match, and unsurprisingly the fraction of total points won is strongly connected with the winner of the game. Interestingly, there is some overlap in the fraction of total points won between won and lost games, as it is possible to win a match without getting a majority of the points. This happens in about 5% of the matches in the dataset.
-```{r echo=F, fig.align='center'}
+```{r echo=F, warning=F}
 plot_derived_features
 ```
 	A baseline prediction accuracy is established by counting player wins and losses, and calculating the percent of games won by each player. The winner of any given match is then predicted to be the player with the higher win rate. A second prediction model is also made by predicting based on player average fraction of total points won, which gives slightly different results as the two are not perfectly correlated.
@@ -32,11 +35,11 @@ rather than simply assigning wins a value of 1. This is based on the intuition t
 
 ## Results
 	The accuracy of each model is compiled in the table below:
-```{r echo=F, fig.align="center"}
+```{r echo=F, warning=F}
 res$acc
 ```
 	The Elo rating system based approach only provided marginal improvements over simply using win rate as a measure of player skill. Using score for game outcomes rather than the winner did not notably improve it, producing very similar results to simply using wins. Using regression to assign weights to the relative player factors also did not improve predictions, and if anything actually had reduced accuracy compared with simply using ranking. The reason for this can be seen by plotting the factor's values against ranking difference, with them capturing little to no new information not already contained in the ranking.
-```{r echo=F, fig.align='center'}
+```{r echo=F}
 plot_factors_vs_rating
 ```
 

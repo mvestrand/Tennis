@@ -369,6 +369,11 @@ tibble(player_id = known_final_players) %>%
 # Models
 #
 
+set.seed(11, sample.kind="Rounding")
+
+res <- create_results_table()
+
+
 
 #======================================
 # Random Guessing
@@ -486,7 +491,7 @@ elo_rating_predict <- function(player_ratings, test_set) {
 }
 
 r_init <- 1500
-k_values <- seq(20,36, by=2)
+k_values <- seq(20,36, by=8)
 accuracies <- sapply(k_values, FUN=function(k){
   print(k)
   ratings <- elo_rating(k, r_init, matches_train)
@@ -552,23 +557,21 @@ elo_rating_weighted_score_predict <- function(player_ratings, test_set) {
 r_init <- 1500
 k <- best_k
 w_values <- seq(0,1, by=.1)
-accuracies <- sapply(w_values, FUN=function(w){
-  print(w)
-  ratings <- elo_rating_weighted_score(k, r_init, w, matches_train)
-  pred <- elo_rating_weighted_score_predict(ratings, matches_test)
-  mean(pred==matches_test$winner_id)
-})
-best_w <- w_values[which.max(accuracies)]
+best_w <- 1
+
+# # Very slow
+# accuracies <- sapply(w_values, FUN=function(w){
+#   print(w)
+#   ratings <- elo_rating_weighted_score(k, r_init, w, matches_train)
+#   pred <- elo_rating_weighted_score_predict(ratings, matches_test)
+#   mean(pred==matches_test$winner_id)
+# })
+# best_w <- w_values[which.max(accuracies)]
+
 
 # Compute ratings on the entire training set
 ratings <- elo_rating_weighted_score(k, r_init, best_w, matches_final_train)
 pred <- elo_rating_weighted_score_predict(ratings, matches_final_test)
-
-plot(w_values, accuracies)
-
-plot_w_accuracy <- tibble(w=w_values, accuracy=accuracies) %>%
-  ggplot(aes(w, accuracy)) +
-  geom_line()
 
 
 res <- update_results_table(res, "Elo Rating System w/ Weighted Points Won Rate", pred, mean(pred==matches_final_test$winner_id))
