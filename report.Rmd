@@ -5,9 +5,6 @@ output: pdf_document
 ---
 
 ```{r include=FALSE}
-library(knitr)
-opts_chunk$set(tidy.opts=list(width.cutoff=80),tidy=TRUE)
-
 source("monolith.R")
 ```
 
