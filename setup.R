@@ -62,8 +62,9 @@ shuffle_matches <- function(match_data) {
   match_data %>%
     rename(player1_id="winner_id", player2_id="loser_id") %>%
     mutate(winner_id=player1_id) %>%
-    mutate(won=(!swap)) %>%
-    select(tourney_id, tourney_name, tourney_date, surface, best_of, player1_id, player2_id, winner_id, won) %>%
+    mutate(win=ifelse(!swap, "Win", "Lose")) %>%
+    mutate(win=factor(win)) %>%
+    select(tourney_id, tourney_name, tourney_date, surface, best_of, player1_id, player2_id, winner_id, win) %>%
     mutate(player1_id=ifelse(swap, player2_id, player1_id),
            player2_id=ifelse(swap, winner_id, player2_id))
 }

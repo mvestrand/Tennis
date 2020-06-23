@@ -247,24 +247,84 @@ get_player_stats <- function(player_data, player_ratings, match_data) {
     mutate(bpSavedRate = ifelse(is.nan(bpSavedRate), 0, bpSavedRate),
            bpConvRate = ifelse(is.nan(bpConvRate), 0, bpConvRate)) %>%
     left_join(player_ratings, by="player_id") %>% 
-    left_join(player_data, by='player_id')
+    left_join(player_data, by='player_id') %>%
+    select(-birthdate) %>%
+    mutate(hand = ifelse(hand=="L", 1, -1)) %>% # Assume unknowns are right-handed since it is more common
+    mutate_all(~replace(., is.na(.), 0)) %>%
+    mutate_all(~replace(., is.nan(.), 0))
+    
 }
 
 # Compute stats of a player relative to their opponent
 get_match_stats <- function(player_stats, match_data) {
-  shuffled <- shuffle_matches(match_data)
-  
-  shuffled %>%
+  match_data %>%
     left_join(player_stats, by=c("player1_id" = "player_id")) %>%
     left_join(player_stats, by=c("player2_id" = "player_id")) %>%
-    mutate(aceDiff = )
-    
+    mutate(aceDiff = aceRate.x - aceRate.y,
+           dfDiff = dfRate.x - dfRate.y,
+           ratingDiff = rating.x - rating.y,
+           off1st = sv1stWonRate.x - ret1stWonRate.y,
+           off2nd = sv2ndWonRate.x - ret2ndWonRate.y,
+           offBp = bpConvRate.x - bpSavedRate.y,
+           offpt = svptWonRate.x - retptWonRate.y,
+           def1st = ret1stWonRate.x - sv1stWonRate.y,
+           def2nd = ret2ndWonRate.x - sv2ndWonRate.y,
+           defBp = bpSavedRate.x - bpConvRate.y,
+           defpt = retptWonRate.x - svptWonRate.y,
+           hand = hand.x - hand.y)
 }
 
-player_stats <- get_player_stats(atp_players, ratings, matches_train)
+simplify_match_stats <- function(match_stats) {
+  match_stats %>%
+    select(win,
+           aceDiff,
+           dfDiff,
+           ratingDiff,
+           off1st,
+           off2nd,
+           offBp,
+           offpt,
+           def1st,
+           def2nd,
+           defBp,
+           defpt,
+           hand)
+}
+
+player_stats <- get_player_stats(atp_players, ratings, matches_final_train)
 
 
-match_stats <- get_match_stats(player_stats, matches_train)
+match_stats <- get_match_stats(player_stats, shuffle_matches(matches_final_train))
+match_stats <- simplify_match_stats(match_stats)
+
+test_match_stats <- simplify_match_stats(get_match_stats(player_stats, matches_final_test))
+
+fit <- train(win ~ ., method = "glm", data = match_stats)
+pred <- predict(fit, test_match_stats)
+
+res <- update_results_table(res, "GLM", pred, mean(pred==matches_final_test$win))
+
+#============
+# Knn model
+#============
+
+# # Takes too long to complete
+# fit <- train(win ~ ., method = "knn", data = match_stats)
+# pred <- predict(fit, test_match_stats)
+# 
+# res <- update_results_table(res, "knn", pred, mean(pred==matches_final_test$win))
+# 
+
+#============
+# QDA model
+#============
+
+fit <- train(win ~ ., method = "qda", data = match_stats)
+pred <- predict(fit, test_match_stats)
+
+res <- update_results_table(res, "QDA", pred, mean(pred==matches_final_test$win))
+
+
 #ratings <- elo_rating_weighted_score(k, r_init, best_w, matches_final_train)
 
 

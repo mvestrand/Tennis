@@ -146,3 +146,8 @@ plot_derived_features <- derived_stats %>% gather(key="stat", value="value", p_a
 won_games <- derived_stats %>%
   filter(win=="Win")
 mean(won_games$p_ptWonRate < 0.5)
+
+# Handedness values
+atp_players %>%
+  group_by(hand) %>%
+  summarize(n=n())
