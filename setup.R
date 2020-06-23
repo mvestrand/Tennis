@@ -55,7 +55,7 @@ atp_matches <- raw_matches %>%
 
 
 # Randomize which player is listed first
-create_test_matches <- function(match_data) {
+randomize_test_matches <- function(match_data) {
   swap <- sample(c(TRUE, FALSE), size=(nrow(match_data)), replace=TRUE)
   match_data %>%
     rename(player1_id="winner_id", player2_id="loser_id") %>%
@@ -75,19 +75,38 @@ atp_players <- read_csv(file.path(datapath, "atp_players.csv"), col_types=cols(
   country = col_factor()
 ))
 
+
+final_test_date = "2018-01-01"
+test_date = "2017-01-01"
+
 # Split into training and test sets
 matches_final_train <- atp_matches %>%
-  filter(tourney_date < "2018-01-01")
-
-matches_final_test <- atp_matches %>%
-  filter(tourney_date >= "2018-01-01")
-matches_final_test <- create_test_matches(matches_final_test)
+  filter(tourney_date < final_test_date)
 
 matches_train <- matches_final_train %>%
-  filter(tourney_date < "2017-01-01")
+  filter(tourney_date < test_date)
+
+# Get all players in test sets
+known_final_players <- matches_final_train %>%
+  gather(key="player_type", value="player_id", winner_id, loser_id) %>%
+  distinct(player_id) %>%
+  .$player_id
+known_players <- matches_train %>%
+  gather(key="player_type", value="player_id", winner_id, loser_id) %>%
+  distinct(player_id) %>%
+  .$player_id
+
+
+matches_final_test <- atp_matches %>%
+  filter(winner_id %in% known_final_players
+         & loser_id %in% known_final_players) %>%
+  filter(tourney_date >= "2018-01-01")
+matches_final_test <- randomize_test_matches(matches_final_test)
 
 matches_test <- matches_final_train %>%
+  filter(winner_id %in% known_players
+         & loser_id %in% known_players) %>%
   filter(tourney_date >= "2017-01-01")
-matches_test <- create_test_matches(matches_test)
+matches_test <- randomize_test_matches(matches_test)
 
 
