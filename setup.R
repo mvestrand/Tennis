@@ -7,6 +7,7 @@ if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-
 if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
 if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
 #if(!require(glue)) install.packages("glue", repos = "http://cran.us.r-project.org")
+#if(!require(hash)) install.packages("hash", repos = "http://cran.us.r-project.org")
 
 # Unpack the dataset
 zipfile <- "365722_715072_bundle_archive.zip"
@@ -51,16 +52,18 @@ atp_matches <- raw_matches %>%
                   +l_ace+l_df+l_svpt+l_1stIn+l_1stWon+l_2ndWon+l_SvGms+l_bpSaved+l_bpFaced)
          & str_detect(score, "[0-9]")) %>%
   mutate(retired = str_detect(score, regex("ret", ignore_case=TRUE))) %>%
-  select(-score, -winner_rank, -winner_rank_points, -loser_rank, -loser_rank_points)
+  select(-score, -winner_rank, -winner_rank_points, -loser_rank, -loser_rank_points) %>%
+  mutate(ptWonRate = (w_1stWon + w_2ndWon + l_svpt - l_1stWon - l_2ndWon)/(w_svpt + l_svpt))
 
 
 # Randomize which player is listed first
-randomize_test_matches <- function(match_data) {
+shuffle_matches <- function(match_data) {
   swap <- sample(c(TRUE, FALSE), size=(nrow(match_data)), replace=TRUE)
   match_data %>%
     rename(player1_id="winner_id", player2_id="loser_id") %>%
     mutate(winner_id=player1_id) %>%
-    select(tourney_id, tourney_name, tourney_date, surface, best_of, player1_id, player2_id, winner_id) %>%
+    mutate(won=(!swap)) %>%
+    select(tourney_id, tourney_name, tourney_date, surface, best_of, player1_id, player2_id, winner_id, won) %>%
     mutate(player1_id=ifelse(swap, player2_id, player1_id),
            player2_id=ifelse(swap, winner_id, player2_id))
 }
@@ -101,12 +104,64 @@ matches_final_test <- atp_matches %>%
   filter(winner_id %in% known_final_players
          & loser_id %in% known_final_players) %>%
   filter(tourney_date >= "2018-01-01")
-matches_final_test <- randomize_test_matches(matches_final_test)
+matches_final_test <- shuffle_matches(matches_final_test)
 
 matches_test <- matches_final_train %>%
   filter(winner_id %in% known_players
          & loser_id %in% known_players) %>%
   filter(tourney_date >= "2017-01-01")
-matches_test <- randomize_test_matches(matches_test)
+matches_test <- shuffle_matches(matches_test)
+
+
+# Make table with every match having an entry from each player's perspectives
+neutralize_matches <- function(match_data) {
+  winners <- match_data %>%
+    rename(player_id = "winner_id",
+           opponent_id = "loser_id",
+           p_ace = "w_ace",
+           p_df = "w_df",
+           p_svpt = "w_svpt",
+           p_1stIn = "w_1stIn",
+           p_1stWon = "w_1stWon",
+           p_2ndWon = "w_2ndWon",
+           p_SvGms = "w_SvGms",
+           p_bpSaved = "w_bpSaved",
+           p_bpFaced = "w_bpFaced",
+           o_ace = "l_ace",
+           o_df = "l_df",
+           o_svpt = "l_svpt",
+           o_1stIn = "l_1stIn",
+           o_1stWon = "l_1stWon",
+           o_2ndWon = "l_2ndWon",
+           o_SvGms = "l_SvGms",
+           o_bpSaved = "l_bpSaved",
+           o_bpFaced = "l_bpFaced") %>%
+    mutate(win="Win")
+  losers <- match_data %>%
+    rename(player_id = "loser_id",
+           opponent_id = "winner_id",
+           p_ace = "l_ace",
+           p_df = "l_df",
+           p_svpt = "l_svpt",
+           p_1stIn = "l_1stIn",
+           p_1stWon = "l_1stWon",
+           p_2ndWon = "l_2ndWon",
+           p_SvGms = "l_SvGms",
+           p_bpSaved = "l_bpSaved",
+           p_bpFaced = "l_bpFaced",
+           o_ace = "w_ace",
+           o_df = "w_df",
+           o_svpt = "w_svpt",
+           o_1stIn = "w_1stIn",
+           o_1stWon = "w_1stWon",
+           o_2ndWon = "w_2ndWon",
+           o_SvGms = "w_SvGms",
+           o_bpSaved = "w_bpSaved",
+           o_bpFaced = "w_bpFaced") %>%
+    mutate(win="Lose")
+  
+  bind_rows(winners, losers)
+}
+
 
 
