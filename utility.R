@@ -1,3 +1,9 @@
+####################################################################
+# @file: utility.r
+#   Provides general utility functions for use in project scripts
+#
+# @author: Max Vestrand
+#
 
 
 

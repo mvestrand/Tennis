@@ -1,5 +1,8 @@
-########################################################
-# Explore the dataset
+####################################################################
+# @file: data_exploration.r
+#   Creates plots and tables to help explore the dataset
+#
+# @author: Max Vestrand
 #
 
 

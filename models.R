@@ -1,5 +1,8 @@
-########################################################
-# Try different models and evaluate their effectiveness
+####################################################################
+# @file: models.r
+#   Tries different models for predicting matches and records results
+#
+# @author: Max Vestrand
 #
 
 set.seed(11, sample.kind="Rounding")

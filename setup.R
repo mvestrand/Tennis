@@ -1,5 +1,8 @@
-######################################################## 
-# Install any required packages and setup the dataset
+####################################################################
+# @file: setup.r
+#   Installs any required packages, loads and reformats the dataset
+#
+# @author: Max Vestrand
 #
 
 # Install packages
