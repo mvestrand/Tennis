@@ -63,50 +63,6 @@ unparsed_matches <- raw_matches %>%
   mutate(score = trim(str_replace(score, regex("ret", ignore_case=TRUE), ""))) %>%
   filter(!str_detect(score, score_regex))
 
-  
-# Tabulate player stats
-get_player_stats <- function(match_data) {
-  valid <- match_data %>% filter(str_detect(score, "[0-9]"))
-  
-  # Count meaningful wins and loses
-  win_counts <- valid %>%
-    group_by(winner_id) %>%
-    summarize(wins = n()) %>%
-    rename(player_id = 1)
-  lose_counts <- valid %>%
-    group_by(loser_id) %>%
-    summarize(loses = n()) %>%
-    rename(player_id = 1)
-  
-  # Count retires
-  retires <- valid %>%
-    filter(str_detect(score, regex("ret", ignore_case=TRUE)))
-  retired_on_counts <- retires %>%
-    group_by(winner_id) %>%
-    summarize(retired_on = n()) %>%
-    rename(player_id = 1)
-  retire_counts <- retires %>%
-    group_by(loser_id) %>%
-    summarize(retires = n()) %>%
-    rename(player_id = 1)
-  
-  # Count walkovers
-  walkover_counts <- match_data %>% filter(score %in% c("RET", "W/O", "Walkover")) %>%
-    group_by(loser_id) %>%
-    summarize(walkovers=n()) %>%
-    rename(player_id = 1)
-  
-  total_counts <- full_join(win_counts, lose_counts, by='player_id') %>%
-    left_join(retired_on_counts, by='player_id') %>%
-    left_join(retire_counts, by='player_id') %>%
-    left_join(walkover_counts, by='player_id') %>%
-    replace_na(list(wins=0, loses=0, retired_on=0, retires=0, walkovers=0)) %>%
-    mutate(matches = wins+loses)
-  
-}
-
-
-player_stats <- get_player_stats(raw_matches)
 
 # Players with n matches
 player_stats %>% ggplot(aes(matches)) +
@@ -129,3 +85,10 @@ player_stats %>%
   geom_histogram(bins=30, color='black') +
   scale_x_continuous(trans='log2') +
   ggtitle('Players by Win-Loss Ratio')
+
+
+
+
+
+
+
